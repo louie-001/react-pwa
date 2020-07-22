@@ -9,6 +9,7 @@
 
 // To learn more about the benefits of this model and instructions on how to
 // opt-in, read https://bit.ly/CRA-PWA
+import axios from 'axios';
 
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost'
@@ -20,51 +21,38 @@ const isLocalhost = Boolean(
     ),
 );
 
-export function register(config) {
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
-    // The URL constructor is available in all browsers that support SW.
-    const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
-    if (publicUrl.origin !== window.location.origin) {
-      // Our service worker won't work if PUBLIC_URL is on a different origin
-      // from what our page is served on. This might happen if a CDN is used to
-      // serve assets; see https://github.com/facebook/create-react-app/issues/2374
-      return;
-    }
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
 
-    window.addEventListener('load', () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
 
-      if (isLocalhost) {
-        // This is running on localhost. Let's check if a service worker still exists or not.
-        checkValidServiceWorker(swUrl, config);
-
-        // Add some additional logging to localhost, pointing developers to the
-        // service worker/PWA documentation.
-        navigator.serviceWorker.ready.then(() => {
-          console.log(
-            'This web app is being served cache-first by a service '
-              + 'worker. To learn more, visit https://bit.ly/CRA-PWA',
-          );
-        });
-      } else {
-        // Is not localhost. Just register service worker
-        registerValidSW(swUrl, config);
-      }
-    });
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
   }
+  return outputArray;
 }
 
 function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
-      const publicKey = 'BOEQSjdhorIf8M0XFNlwohK3sTzO9iJwvbYU-fuXRF0tvRpPPMGO6d_gJC_pUQwBT7wD8rKutpNTFHOHN3VqJ0A';
+      const publicKey = 'BI6jKR-H5k4vSKtwAbwXcJRmyvu_43u5ULBcOhDzQIBTXCAy1UbebQIwmlkX01Tw42-uNDCzMKzNiqRwsUr_GyA';
+      const convertedVapidKey = urlBase64ToUint8Array(publicKey);
       const subscribeOption = {
         userVisibleOnly: true,
-        applicationServerKey: publicKey,
+        applicationServerKey: convertedVapidKey,
       };
       registration.pushManager.subscribe(subscribeOption).then((res) => {
-        console.log(JSON.stringify(res));
+        console.log(res);
+        axios.post('http://127.0.0.1:7001/subscribe', res).then((result) => {
+          console.log(result.data);
+        }).catch((err) => {
+          console.error(err);
+        });
       });
 
       registration.onupdatefound = () => {
@@ -80,7 +68,7 @@ function registerValidSW(swUrl, config) {
               // content until all client tabs are closed.
               console.log(
                 'New content is available and will be used when all '
-                  + 'tabs for this page are closed. See https://bit.ly/CRA-PWA.',
+                                + 'tabs for this page are closed. See https://bit.ly/CRA-PWA.',
               );
 
               // Execute callback
@@ -101,8 +89,7 @@ function registerValidSW(swUrl, config) {
           }
         };
       };
-    })
-    .catch((error) => {
+    }).catch((error) => {
       console.error('Error during service worker registration:', error);
     });
 }
@@ -117,7 +104,7 @@ function checkValidServiceWorker(swUrl, config) {
       const contentType = response.headers.get('content-type');
       if (
         response.status === 404
-        || (contentType != null && contentType.indexOf('javascript') === -1)
+                || (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
         // No service worker found. Probably a different app. Reload the page.
         navigator.serviceWorker.ready.then((registration) => {
@@ -135,6 +122,41 @@ function checkValidServiceWorker(swUrl, config) {
         'No internet connection found. App is running in offline mode.',
       );
     });
+}
+
+export function register(config) {
+  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+    // The URL constructor is available in all browsers that support SW.
+    const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
+    if (publicUrl.origin !== window.location.origin) {
+      // Our service worker won't work if PUBLIC_URL is on a different origin
+      // from what our page is served on. This might happen if a CDN is used to
+      // serve assets; see https://github.com/facebook/create-react-app/issues/2374
+      return;
+    }
+
+    window.addEventListener('load', () => {
+      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      // const swUrl = './wsConfig.js';
+
+      if (isLocalhost) {
+        // This is running on localhost. Let's check if a service worker still exists or not.
+        checkValidServiceWorker(swUrl, config);
+
+        // Add some additional logging to localhost, pointing developers to the
+        // service worker/PWA documentation.
+        navigator.serviceWorker.ready.then(() => {
+          console.log(
+            'This web app is being served cache-first by a service '
+                        + 'worker. To learn more, visit https://bit.ly/CRA-PWA',
+          );
+        });
+      } else {
+        // Is not localhost. Just register service worker
+        registerValidSW(swUrl, config);
+      }
+    });
+  }
 }
 
 export function unregister() {
